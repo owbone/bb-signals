@@ -55,7 +55,7 @@ public:
   {
     std::weak_ptr<const slot_state> weak_state(this->shared_from_this());
 
-    auto lock_and_execute = [weak_state](Args&&... args)
+    auto lock_and_execute = [weak_state](Args... args)
     {
       if (auto state = weak_state.lock())
         state->execute(std::forward<Args>(args)...);
