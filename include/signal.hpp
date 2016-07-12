@@ -2,6 +2,7 @@
 #define SIGNAL_HPP
 
 #include "detail/signal_state.hpp"
+#include "detail/slot_state.hpp"
 #include "slot.hpp"
 
 #include <functional>
@@ -98,7 +99,7 @@ signal<Params...>& signal<Params...>::operator=(signal&&) = default;
 template <class... Params>
 auto signal<Params...>::connect(function_t fn) const -> slot
 {
-  using slot_state_t = detail::function_slot_state<Params...>;
+  using slot_state_t = detail::slot_state<Params...>;
   auto connection = std::make_shared<slot_state_t>(std::move(fn));
   state->connect(connection);
   return slot{connection};
@@ -108,7 +109,7 @@ template <class... Params>
 template <class Executor>
 auto signal<Params...>::connect(Executor& executor, function_t fn) const -> slot
 {
-  using slot_state_t = detail::executor_slot_state<Executor, Params...>;
+  using slot_state_t = detail::slot_state<Params...>;
   auto connection = std::make_shared<slot_state_t>(executor, std::move(fn));
   state->connect(connection);
   return slot{connection};

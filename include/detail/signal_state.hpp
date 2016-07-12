@@ -1,8 +1,6 @@
 #ifndef SIGNAL_STATE_HPP
 #define SIGNAL_STATE_HPP
 
-#include "executor_slot_state.hpp"
-#include "function_slot_state.hpp"
 #include "slot_state.hpp"
 
 #include <functional>
