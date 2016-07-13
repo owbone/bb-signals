@@ -16,19 +16,8 @@ namespace detail {
 
 //------------------------------------------------------------------------------
 
-class slot_state_base
-{
-public:
-  virtual ~slot_state_base() { }
-  virtual void reset() = 0;
-};
-
-//------------------------------------------------------------------------------
-
 template <class... Params>
-class slot_state
-    : public slot_state_base
-    , public std::enable_shared_from_this<slot_state<Params...>>
+class slot_state : public std::enable_shared_from_this<slot_state<Params...>>
 {
 public:
   using function_t = std::function<void(Params...)>;
@@ -44,7 +33,7 @@ public:
     , fn(std::move(fn))
   { }
 
-  void reset() override
+  void reset()
   {
     std::unique_lock<std::mutex> lock{mutex};
     fn = nullptr;

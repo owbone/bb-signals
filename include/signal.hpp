@@ -2,7 +2,6 @@
 #define SIGNAL_HPP
 
 #include "detail/signal_state.hpp"
-#include "detail/slot_state.hpp"
 #include "slot.hpp"
 
 #include <functional>
@@ -58,23 +57,14 @@ public:
   auto operator=(signal&&) -> signal&;
 
   ///
-  /// \brief connect registers the given function to be called when the signal
-  /// is emitted.
-  /// \param fn The function object to be called.
-  /// \return A new slot which owns this connection.
+  /// \brief Connect an existing signal to an existing slot. The slot will
+  /// be activated when the signal is emitted.
+  /// \param signal A const reference to an existing signal to listen to.
+  /// \param slot A reference to an existing slot to receive signals.
   ///
-  auto connect(function_t fn) const -> slot;
-
-  ///
-  /// \brief connect registers the given function to be submitted to the given
-  /// executor when the signal is emitted.
-  /// \tparam Executor A type which implements the Executor concept.
-  /// \param executor A reference to the executor on which to call fn.
-  /// \param fn The function object to be called.
-  /// \return A new slot which owns this connection.
-  ///
-  template <class Executor>
-  auto connect(Executor& executor, function_t fn) const -> slot;
+  template <class... T>
+  friend void
+  connect(const signal<T...>& signal, slot<T...>& slot);
 
 private:
   template <class... T>
@@ -107,24 +97,11 @@ template <class... Params>
 signal<Params...>& signal<Params...>::operator=(signal&&) = default;
 
 template <class... Params>
-auto signal<Params...>::connect(function_t fn) const -> slot
+void
+connect(const signal<Params...>& signal, slot<Params...>& slot)
 {
-  if (!state) return slot{};
-  using slot_state_t = detail::slot_state<Params...>;
-  auto connection = std::make_shared<slot_state_t>(std::move(fn));
-  state->connect(connection);
-  return slot{connection};
-}
-
-template <class... Params>
-template <class Executor>
-auto signal<Params...>::connect(Executor& executor, function_t fn) const -> slot
-{
-  if (!state) return slot{};
-  using slot_state_t = detail::slot_state<Params...>;
-  auto connection = std::make_shared<slot_state_t>(executor, std::move(fn));
-  state->connect(connection);
-  return slot{connection};
+  if (signal.state)
+    signal.state->connect(slot.state);
 }
 
 //------------------------------------------------------------------------------

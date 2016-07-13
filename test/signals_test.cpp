@@ -25,7 +25,9 @@ TEST(signals_test, slot_receives_void_signal)
   bb::emitter<> emit_signal;
   bb::signal<> signal;
   bb::connect(emit_signal, signal);
-  auto slot = signal.connect([&received](){ received = true; });
+
+  bb::slot<> slot{[&received]{ received = true; }};
+  bb::connect(signal, slot);
 
   ASSERT_FALSE(received);
 
@@ -44,7 +46,8 @@ TEST(signals_test, destroyed_slot_doesnt_receive_signal)
   bb::connect(emit_signal, signal);
 
   {
-    auto slot = signal.connect([&received]() { received = true; });
+    bb::slot<> slot{[&received]() { received = true; }};
+    bb::connect(signal, slot);
 
     emit_signal();
 
@@ -62,11 +65,13 @@ TEST(signals_test, destroyed_slot_doesnt_receive_signal)
 // argument.
 TEST(signals_test, slot_receives_single_argument)
 {
-  int received = 0;
   bb::emitter<int> emit_signal;
   bb::signal<int> signal;
   bb::connect(emit_signal, signal);
-  auto slot = signal.connect([&](int value){ received = value; });
+
+  int received = 0;
+  bb::slot<int> slot{[&](int value){ received = value; }};
+  bb::connect(signal, slot);
 
   ASSERT_EQ(0, received);
 
@@ -82,15 +87,18 @@ TEST(signals_test, slot_receives_single_argument)
 // arguments.
 TEST(signals_test, multiple_slots_receive_void_signal)
 {
-  std::array<bool, 10> results = {};
-  vector<bb::slot> connections;
   bb::emitter<> emit_signal;
   bb::signal<> signal;
   bb::connect(emit_signal, signal);
 
+  std::array<bool, 10> results = {};
+  vector<bb::slot<>> slots_;
+
   for (bool& received : results)
   {
-    connections.push_back(signal.connect([&](){ received = true; }));
+    bb::slot<> slot{[&](){ received = true; }};
+    bb::connect(signal, slot);
+    slots_.push_back(std::move(slot));
     ASSERT_FALSE(received);
   }
 
@@ -106,15 +114,18 @@ TEST(signals_test, multiple_slots_receive_void_signal)
 // argument.
 TEST(signals_test, multiple_slots_receive_single_argument)
 {
-  std::array<int, 10> results = {};
-  vector<bb::slot> connections;
   bb::emitter<int> emit_signal;
   bb::signal<int> signal;
   bb::connect(emit_signal, signal);
 
+  std::array<int, 10> results = {};
+  vector<bb::slot<int>> slots_;
+
   for (int& result : results)
   {
-    connections.push_back(signal.connect([&](int value){ result = value; }));
+    bb::slot<int> slot{[&](int value){ result = value; }};
+    bb::connect(signal, slot);
+    slots_.push_back(std::move(slot));
     ASSERT_EQ(0, result);
   }
 
@@ -139,9 +150,11 @@ TEST(signals_test, parameters_are_released)
 
   // Check the use_count() of a shared_ptr to make sure that only a single
   // extra copy is made per-function.
+  std::shared_ptr<void> result;
+  bb::slot<std::shared_ptr<void>> slot{[&](auto value){ result = value; }};
+  bb::connect(signal, slot);
+
   std::shared_ptr<void> counter = std::make_shared<bool>();
-  decltype(counter) result;
-  auto slot = signal.connect([&](auto value){ result = value; });
   ASSERT_FALSE(result);
   ASSERT_EQ(1u, counter.use_count());
   emit_signal(counter);
