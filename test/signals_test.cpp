@@ -23,7 +23,8 @@ TEST(signals_test, slot_receives_void_signal)
 {
   bool received = false;
   bb::emitter<> emit_signal;
-  auto signal = emit_signal.create_signal();
+  bb::signal<> signal;
+  bb::connect(emit_signal, signal);
   auto slot = signal.connect([&received](){ received = true; });
 
   ASSERT_FALSE(received);
@@ -39,7 +40,8 @@ TEST(signals_test, destroyed_slot_doesnt_receive_signal)
 {
   bool received = false;
   bb::emitter<> emit_signal;
-  auto signal = emit_signal.create_signal();
+  bb::signal<> signal;
+  bb::connect(emit_signal, signal);
 
   {
     auto slot = signal.connect([&received]() { received = true; });
@@ -62,7 +64,8 @@ TEST(signals_test, slot_receives_single_argument)
 {
   int received = 0;
   bb::emitter<int> emit_signal;
-  auto signal = emit_signal.create_signal();
+  bb::signal<int> signal;
+  bb::connect(emit_signal, signal);
   auto slot = signal.connect([&](int value){ received = value; });
 
   ASSERT_EQ(0, received);
@@ -82,7 +85,8 @@ TEST(signals_test, multiple_slots_receive_void_signal)
   std::array<bool, 10> results = {};
   vector<bb::slot> connections;
   bb::emitter<> emit_signal;
-  auto signal = emit_signal.create_signal();
+  bb::signal<> signal;
+  bb::connect(emit_signal, signal);
 
   for (bool& received : results)
   {
@@ -105,7 +109,8 @@ TEST(signals_test, multiple_slots_receive_single_argument)
   std::array<int, 10> results = {};
   vector<bb::slot> connections;
   bb::emitter<int> emit_signal;
-  auto signal = emit_signal.create_signal();
+  bb::signal<int> signal;
+  bb::connect(emit_signal, signal);
 
   for (int& result : results)
   {
@@ -129,7 +134,8 @@ TEST(signals_test, multiple_slots_receive_single_argument)
 TEST(signals_test, parameters_are_released)
 {
   bb::emitter<std::shared_ptr<void>> emit_signal;
-  auto signal = emit_signal.create_signal();
+  bb::signal<std::shared_ptr<void>> signal;
+  bb::connect(emit_signal, signal);
 
   // Check the use_count() of a shared_ptr to make sure that only a single
   // extra copy is made per-function.

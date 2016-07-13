@@ -33,6 +33,11 @@ public:
   using function_t = std::function<void(Params...)>;
 
   ///
+  /// \brief Construct an inactive signal.
+  ///
+  signal();
+
+  ///
   /// \brief Deleted copy constructor.
   ///
   signal(const signal&) = delete;
@@ -72,7 +77,9 @@ public:
   auto connect(Executor& executor, function_t fn) const -> slot;
 
 private:
-  friend class emitter<Params...>;
+  template <class... T>
+  friend void
+  connect(emitter<T...>& emitter, signal<T...>& signal);
 
   using state_t = detail::signal_state<Params...>;
   using shared_state_t = std::shared_ptr<state_t>;
@@ -86,9 +93,12 @@ private:
 
 template <class... Params>
 signal<Params...>::signal(shared_state_t state)
-  : state(std::move(state))
+  : state{std::move(state)}
 {
 }
+
+template <class... Params>
+signal<Params...>::signal() = default;
 
 template <class... Params>
 signal<Params...>::signal(signal&&) = default;
@@ -99,6 +109,7 @@ signal<Params...>& signal<Params...>::operator=(signal&&) = default;
 template <class... Params>
 auto signal<Params...>::connect(function_t fn) const -> slot
 {
+  if (!state) return slot{};
   using slot_state_t = detail::slot_state<Params...>;
   auto connection = std::make_shared<slot_state_t>(std::move(fn));
   state->connect(connection);
@@ -109,6 +120,7 @@ template <class... Params>
 template <class Executor>
 auto signal<Params...>::connect(Executor& executor, function_t fn) const -> slot
 {
+  if (!state) return slot{};
   using slot_state_t = detail::slot_state<Params...>;
   auto connection = std::make_shared<slot_state_t>(executor, std::move(fn));
   state->connect(connection);

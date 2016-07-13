@@ -22,6 +22,11 @@ class slot
 {
 public:
   ///
+  /// \brief Construct an empty slot.
+  ///
+  slot();
+
+  ///
   /// \brief Copy constructor is deleted.
   ///
   slot(const slot&) = delete;
@@ -66,6 +71,8 @@ slot::slot(shared_state_t state)
   : state(std::move(state))
 {
 }
+
+slot::slot() = default;
 
 slot::slot(slot&&) = default;
 auto slot::operator=(slot&&) -> slot& = default;

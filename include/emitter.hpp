@@ -47,22 +47,29 @@ public:
   auto operator=(emitter&&) -> emitter&;
 
   ///
-  /// \brief create_signal creates a new signal which is associated with this
-  /// emitter.
-  /// \return A new signal.
-  ///
-  auto create_signal() const -> signal<Params...>;
-
-  ///
   /// \brief emit any signals which have been created.
   /// \param args The arguments with which to emit the signal.
   ///
   template <class... Args>
   void operator()(Args&&... args);
 
+  ///
+  /// \brief Connect an emitter to a signal, so that calling the emitter will
+  /// trigger any slots connected to the signal.
+  /// \param emitter The sending emitter.
+  /// \param signal The receiving signal.
+  /// \note Existing connections from the emitter and the signal will be
+  /// destroyed.
+  ///
+  template <class... T>
+  friend void
+  connect(emitter<T...>& emitter, signal<T...>& signal);
+
 private:
   using state_t = detail::signal_state<Params...>;
   using shared_state_t = std::shared_ptr<state_t>;
+
+  emitter(shared_state_t);
 
   shared_state_t state;
 };
@@ -70,10 +77,13 @@ private:
 //------------------------------------------------------------------------------
 
 template <class... Params>
-emitter<Params...>::emitter()
-  : state(std::make_shared<state_t>())
+emitter<Params...>::emitter(shared_state_t state)
+  : state{std::move(state)}
 {
 }
+
+template <class... Params>
+emitter<Params...>::emitter() = default;
 
 template <class... Params>
 emitter<Params...>::emitter(const emitter&) = default;
@@ -90,9 +100,11 @@ auto
 emitter<Params...>::operator=(emitter&&) -> emitter<Params...>& = default;
 
 template <class... Params>
-auto emitter<Params...>::create_signal() const -> signal<Params...>
+void connect(emitter<Params...>& emitter_, signal<Params...>& signal_)
 {
-  return signal<Params...>{state};
+  auto state = std::make_shared<typename emitter<Params...>::state_t>();
+  emitter_ = emitter<Params...>{state};
+  signal_ = signal<Params...>{state};
 }
 
 template <class... Params>
