@@ -45,19 +45,40 @@ TEST(signals_test, destroyed_slot_doesnt_receive_signal)
   bb::signal<> signal;
   bb::connect(emit_signal, signal);
 
-  {
-    bb::slot<> slot{[&received]() { received = true; }};
-    bb::connect(signal, slot);
-
-    emit_signal();
-
-    EXPECT_TRUE(received);
-
-    received = false;
-  }
+  bb::slot<> slot{[&received]() { received = true; }};
+  bb::connect(signal, slot);
+  ASSERT_FALSE(received);
 
   emit_signal();
+  EXPECT_TRUE(received);
+  received = false;
 
+  slot = bb::slot<>{};
+
+  emit_signal();
+  EXPECT_FALSE(received);
+}
+
+// Check that slots which were connected to a signal which has been destroyed
+// no longer receive signals when they are emitted.
+TEST(signals_test, destroyed_signal_doesnt_emit)
+{
+  bb::emitter<> emit_signal;
+  bb::signal<> signal;
+  bb::connect(emit_signal, signal);
+
+  bool received = false;
+  bb::slot<> slot{[&received](){ received = true; }};
+  bb::connect(signal, slot);
+  ASSERT_FALSE(received);
+
+  emit_signal();
+  EXPECT_TRUE(received);
+  received = false;
+
+  signal = bb::signal<>{};
+
+  emit_signal();
   EXPECT_FALSE(received);
 }
 
@@ -207,7 +228,6 @@ TEST(signals_test, function_connected_to_signal_is_not_leaked)
   EXPECT_TRUE(*called.lock());
 
   signal = bb::signal<>{};
-  emit_signal = bb::emitter<>{};  // FIXME: shouldn't be required.
 
   EXPECT_TRUE(called.expired());
 }

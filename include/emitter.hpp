@@ -66,18 +66,18 @@ public:
 
 private:
   using state_t = detail::signal_state<Params...>;
-  using shared_state_t = std::shared_ptr<state_t>;
+  using weak_state_t = std::weak_ptr<state_t>;
 
-  emitter(shared_state_t);
+  emitter(weak_state_t);
 
-  shared_state_t state;
+  weak_state_t weak_state;
 };
 
 //------------------------------------------------------------------------------
 
 template <class... Params>
-emitter<Params...>::emitter(shared_state_t state)
-  : state{std::move(state)}
+emitter<Params...>::emitter(weak_state_t weak_state)
+  : weak_state{std::move(weak_state)}
 {
 }
 
@@ -99,8 +99,10 @@ emitter<Params...>& emitter<Params...>::operator=(emitter&&) = default;
 template <class... Params>
 void connect(emitter<Params...>& emitter_, signal<Params...>& signal_)
 {
-  auto state = std::make_shared<typename emitter<Params...>::state_t>();
-  emitter_ = emitter<Params...>{state};
+  using state_t = typename emitter<Params...>::state_t;
+  using weak_state_t = typename emitter<Params...>::weak_state_t;
+  auto state = std::make_shared<state_t>();
+  emitter_ = emitter<Params...>{weak_state_t{state}};
   signal_ = signal<Params...>{state};
 }
 
@@ -108,7 +110,8 @@ template <class... Params>
 template <class... Args>
 void emitter<Params...>::operator()(Args&&... args)
 {
-  state->emit(std::forward<Args>(args)...);
+  if (auto state = weak_state.lock())
+    state->emit(std::forward<Args>(args)...);
 }
 
 //------------------------------------------------------------------------------
