@@ -63,13 +63,11 @@ public:
   /// \param slot A reference to an existing slot to receive signals.
   ///
   template <class... T>
-  friend void
-  connect(const signal<T...>& signal, slot<T...>& slot);
+  friend void connect(const signal<T...>& signal, slot<T...>& slot);
 
 private:
   template <class... T>
-  friend void
-  connect(emitter<T...>& emitter, signal<T...>& signal);
+  friend void connect(emitter<T...>& emitter, signal<T...>& signal);
 
   using state_t = detail::signal_state<Params...>;
   using shared_state_t = std::shared_ptr<state_t>;
@@ -97,8 +95,7 @@ template <class... Params>
 signal<Params...>& signal<Params...>::operator=(signal&&) = default;
 
 template <class... Params>
-void
-connect(const signal<Params...>& signal, slot<Params...>& slot)
+void connect(const signal<Params...>& signal, slot<Params...>& slot)
 {
   if (signal.state)
     signal.state->connect(slot.state);

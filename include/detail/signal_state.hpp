@@ -83,8 +83,7 @@ private:
     }
   }
 
-  void
-  splice_new_connections(connection_list_t& list) const
+  void splice_new_connections(connection_list_t& list) const
   {
     std::unique_lock<std::mutex> lock(new_connections_mutex);
     list.splice(list.end(), new_connections);

@@ -34,7 +34,7 @@ public:
   ///
   /// \brief Copy assignment operator.
   ///
-  auto operator=(const emitter&) -> emitter&;
+  emitter& operator=(const emitter&);
 
   ///
   /// \brief Move constructor.
@@ -44,7 +44,7 @@ public:
   ///
   /// \brief Move assignment operator.
   ///
-  auto operator=(emitter&&) -> emitter&;
+  emitter& operator=(emitter&&);
 
   ///
   /// \brief emit any signals which have been created.
@@ -62,8 +62,7 @@ public:
   /// destroyed.
   ///
   template <class... T>
-  friend void
-  connect(emitter<T...>& emitter, signal<T...>& signal);
+  friend void connect(emitter<T...>& emitter, signal<T...>& signal);
 
 private:
   using state_t = detail::signal_state<Params...>;
@@ -89,15 +88,13 @@ template <class... Params>
 emitter<Params...>::emitter(const emitter&) = default;
 
 template <class... Params>
-auto
-emitter<Params...>::operator=(const emitter&) -> emitter<Params...>& = default;
+emitter<Params...>& emitter<Params...>::operator=(const emitter&) = default;
 
 template <class... Params>
 emitter<Params...>::emitter(emitter&&) = default;
 
 template <class... Params>
-auto
-emitter<Params...>::operator=(emitter&&) -> emitter<Params...>& = default;
+emitter<Params...>& emitter<Params...>::operator=(emitter&&) = default;
 
 template <class... Params>
 void connect(emitter<Params...>& emitter_, signal<Params...>& signal_)

@@ -61,7 +61,7 @@ public:
   ///
   /// \brief Copy assignment operator is deleted.
   ///
-  auto operator=(const slot&) -> slot& = delete;
+  slot& operator=(const slot&) = delete;
 
   ///
   /// \brief Move constructor.
@@ -71,7 +71,7 @@ public:
   ///
   /// \brief Move assignment operator.
   ///
-  auto operator=(slot&&) -> slot&;
+  slot& operator=(slot&&);
 
   ///
   /// \brief The destructor will disconnect from the signal.
@@ -82,8 +82,7 @@ public:
 
 private:
   template <class... T>
-  friend void
-  connect(const signal<T...>& signal, slot<T...>& slot);
+  friend void connect(const signal<T...>& signal, slot<T...>& slot);
 
   using state_t = detail::slot_state<Params...>;
   using shared_state_t = std::shared_ptr<state_t>;
@@ -105,7 +104,7 @@ slot<Params...>::slot(function_t fn)
 template <class... Params>
 template <class Executor>
 slot<Params...>::slot(Executor& executor, function_t fn)
- : state{std::make_shared<state_t>(executor, std::move(fn))}
+  : state{std::make_shared<state_t>(executor, std::move(fn))}
 {
 }
 
@@ -113,7 +112,7 @@ template <class... Params>
 slot<Params...>::slot(slot&&) = default;
 
 template <class... Params>
-auto slot<Params...>::operator=(slot&&) -> slot& = default;
+slot<Params...>& slot<Params...>::operator=(slot&&) = default;
 
 template <class... Params>
 slot<Params...>::~slot()
