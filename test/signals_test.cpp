@@ -162,6 +162,56 @@ TEST(signals_test, parameters_are_released)
   ASSERT_EQ(2u, counter.use_count());
 }
 
+// Check that a function can be connected directly to a signal, and continues
+// to receive the emitted signals.
+TEST(signals_test, function_connects_to_signal)
+{
+  bb::emitter<int, int, int> emit_signal;
+  bb::signal<int, int, int> signal;
+  bb::connect(emit_signal, signal);
+
+  std::tuple<int, int, int> result{0, 0, 0};
+  bb::connect(signal, [&](int a, int b, int c) { result = {a, b, c}; });
+
+  ASSERT_EQ(std::make_tuple(0, 0, 0), result);
+  emit_signal(1, 2, 3);
+  EXPECT_EQ(std::make_tuple(1, 2, 3), result);
+  emit_signal(9, 8, 7);
+  EXPECT_EQ(std::make_tuple(9, 8, 7), result);
+}
+
+// Check that a function object which has been connected directly to a signal
+// goes out of scope when the signal is destroyed.
+TEST(signals_test, function_connected_to_signal_is_not_leaked)
+{
+  bb::emitter<> emit_signal;
+  bb::signal<> signal;
+  bb::connect(emit_signal, signal);
+
+  struct Functor
+  {
+    std::shared_ptr<bool> called = std::make_shared<bool>(false);
+    void operator()() { *called = true; }
+  };
+
+  Functor fn;
+  std::weak_ptr<bool> called{fn.called};
+  bb::connect(signal, std::move(fn));
+
+  ASSERT_FALSE(called.expired());
+  ASSERT_FALSE(*called.lock());
+
+  emit_signal();
+
+  ASSERT_FALSE(called.expired());
+  EXPECT_TRUE(*called.lock());
+
+  signal = bb::signal<>{};
+  emit_signal = bb::emitter<>{};  // FIXME: shouldn't be required.
+
+  EXPECT_TRUE(called.expired());
+}
+
 //------------------------------------------------------------------------------
 
 }

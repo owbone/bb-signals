@@ -57,13 +57,22 @@ public:
   auto operator=(signal&&) -> signal&;
 
   ///
-  /// \brief Connect an existing signal to an existing slot. The slot will
-  /// be activated when the signal is emitted.
+  /// \brief Connect an existing signal to an existing slot so that the slot is
+  /// invoked when the signal is emitted.
   /// \param signal A const reference to an existing signal to listen to.
   /// \param slot A reference to an existing slot to receive signals.
   ///
   template <class... T>
   friend void connect(const signal<T...>& signal, slot<T...>& slot);
+
+  ///
+  /// \brief Connect an existing signal to a function so that the function is
+  /// called when the signal is emitted.
+  /// \param signal A const reference to an existing signal to listen to.
+  /// \param fn A function to receive signals.
+  ///
+  template <class Fn, class... T>
+  friend void connect(const signal<T...>& signal, Fn fn);
 
 private:
   template <class... T>
@@ -99,6 +108,15 @@ void connect(const signal<Params...>& signal, slot<Params...>& slot)
 {
   if (signal.state)
     signal.state->connect(slot.state);
+}
+
+template <class Fn, class... Params>
+void connect(const signal<Params...>& signal, Fn fn)
+{
+  using function_t = typename signal<Params...>::function_t;
+  if (signal.state)
+    signal.state->connect(function_t{std::move(fn)});
+
 }
 
 //------------------------------------------------------------------------------

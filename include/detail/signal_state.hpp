@@ -36,8 +36,17 @@ public:
 
   void connect(weak_connection_t connection) const
   {
-    std::unique_lock<std::mutex> lock(new_connections_mutex);
+    std::unique_lock<std::mutex> lock{new_connections_mutex};
     new_connections.push_back(std::move(connection));
+  }
+
+  void connect(function_t fn) const
+  {
+    auto connection = std::make_shared<slot_state_t>(std::move(fn));
+    connect(weak_connection_t{connection});
+
+    std::unique_lock<std::mutex> lock{persistent_connections_mutex};
+    persistent_connections.emplace_back(std::move(connection));
   }
 
   template <class... Args>
@@ -67,6 +76,7 @@ public:
 
 private:
   using connection_list_t = std::list<weak_connection_t>;
+  using persistent_connection_list_t = std::list<connection_t>;
 
   template <class... Args>
   typename connection_list_t::iterator
@@ -94,6 +104,9 @@ private:
 
   mutable std::mutex connections_mutex;
   mutable connection_list_t connections;
+
+  mutable std::mutex persistent_connections_mutex;
+  mutable persistent_connection_list_t persistent_connections;
 };
 
 //------------------------------------------------------------------------------
